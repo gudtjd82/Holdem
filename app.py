@@ -153,6 +153,8 @@ TEMPLATE = """
     <div class="container">
         <h1>Texas Hold'em Trainer</h1>
 
+        <h2>Current Range: {{ range_name }}</h2>
+
         <div class="button-container">
             <div>
                 <form method="GET">
