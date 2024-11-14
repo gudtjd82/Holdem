@@ -95,6 +95,11 @@ TEMPLATE = """
             text-align: center;
             max-width: 90%;
         }
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
         .button {
             margin: 10px;
             padding: 10px 20px;
@@ -130,6 +135,7 @@ TEMPLATE = """
         .small-link {
             font-size: 10px;
             margin-top: -5px;
+            text-align: center;
         }
     </style>
 </head>
@@ -137,13 +143,20 @@ TEMPLATE = """
     <div class="container">
         <h1>Texas Hold'em Trainer</h1>
 
-        <form method="GET">
-            <p>Current Range: <strong>{{ range_name }}</strong></p>
-            <button type="submit" name="range" value="1" class="button">Average Range</button>
-            <p class="small-link"><a href="/range_image/average_range.png" target="_blank">View Average Range</a></p>
-            <button type="submit" name="range" value="2" class="button">Short-Hand Range</button>
-            <p class="small-link"><a href="/range_image/short_hand_range.png" target="_blank">View Short-Hand Range</a></p>
-        </form>
+        <div class="button-container">
+            <div>
+                <form method="GET">
+                    <button type="submit" name="range" value="1" class="button">Average Range</button>
+                </form>
+                <p class="small-link"><a href="/range_image/average_range.png" target="_blank">View Average Range</a></p>
+            </div>
+            <div>
+                <form method="GET">
+                    <button type="submit" name="range" value="2" class="button">Short-Hand Range</button>
+                </form>
+                <p class="small-link"><a href="/range_image/short_hand_range.png" target="_blank">View Short-Hand Range</a></p>
+            </div>
+        </div>
 
         {% if message %}
             <p><strong>{{ message }}</strong></p>
