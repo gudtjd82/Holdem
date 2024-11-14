@@ -4,6 +4,10 @@ from hand_range import *
 
 app = Flask(__name__)
 
+# Initialize counters for tracking action accuracy
+total_attempts = 0
+correct_attempts = 0
+
 def deal_preflop():
     position = random.choice(positions)
     card1 = random.choice(ranks) + random.choice(suits)
@@ -21,11 +25,18 @@ def check_action(hand_range, position, hand, action):
 
 @app.route("/", methods=["GET", "POST"])
 def main():
+    global total_attempts, correct_attempts
     message = None
     position, hand = None, None
     range_name = "Average Range"  # Default range name
 
     if request.method == "POST":
+        if request.form.get("reset") == "true":
+            # Reset accuracy counters
+            total_attempts = 0
+            correct_attempts = 0
+            return render_template_string(TEMPLATE, position=None, hand=None, message=None, range_sel=request.form.get("range"), range_name=range_name, accuracy=None)
+
         range_sel = request.form.get("range")
         hand_range = avg_range if range_sel == "1" else short_hand_range
         range_name = "Average Range" if range_sel == "1" else "Short-Hand Range"
@@ -34,6 +45,9 @@ def main():
         action = request.form.get("action")
 
         correct, correct_action = check_action(hand_range, position, hand, action)
+        total_attempts += 1
+        if correct:
+            correct_attempts += 1
         message = "Previous Hand: " + ("Correct!" if correct else f"Incorrect. The correct action was {correct_action}.")
 
         # Deal new hand automatically
@@ -44,7 +58,10 @@ def main():
         range_name = "Average Range" if range_sel == "1" else "Short-Hand Range"
         position, hand = deal_preflop()
 
-    return render_template_string(TEMPLATE, position=position, hand=hand, message=message, range_sel=range_sel, range_name=range_name)
+    # Calculate accuracy
+    accuracy = f"{correct_attempts}/{total_attempts} correct ({(correct_attempts / total_attempts * 100):.2f}%)" if total_attempts > 0 else "No attempts made yet."
+
+    return render_template_string(TEMPLATE, position=position, hand=hand, message=message, range_sel=range_sel, range_name=range_name, accuracy=accuracy)
 
 TEMPLATE = """
 <!DOCTYPE html>
@@ -83,6 +100,10 @@ TEMPLATE = """
             background-color: #4CAF50;
             color: white;
         }
+        .reset {
+            background-color: #555;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -97,6 +118,14 @@ TEMPLATE = """
 
         {% if message %}
             <p><strong>{{ message }}</strong></p>
+        {% endif %}
+
+        {% if accuracy %}
+            <p>Accuracy: <strong>{{ accuracy }}</strong></p>
+            <form method="POST" style="display: inline;">
+                <input type="hidden" name="reset" value="true">
+                <button type="submit" class="button reset">Reset Accuracy</button>
+            </form>
         {% endif %}
 
         {% if position and hand %}
