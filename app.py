@@ -148,13 +148,13 @@ TEMPLATE = """
                 <form method="GET">
                     <button type="submit" name="range" value="1" class="button">Average Range</button>
                 </form>
-                <p class="small-link"><a href="/range_image/average_range.png" target="_blank">View Average Range</a></p>
+                <p class="small-link"><a href="/range_image/avg_range.jpeg" target="_blank">View Average Range</a></p>
             </div>
             <div>
                 <form method="GET">
                     <button type="submit" name="range" value="2" class="button">Short-Hand Range</button>
                 </form>
-                <p class="small-link"><a href="/range_image/short_hand_range.png" target="_blank">View Short-Hand Range</a></p>
+                <p class="small-link"><a href="/range_image/SH_range.jpeg" target="_blank">View Short-Hand Range</a></p>
             </div>
         </div>
 
