@@ -164,7 +164,9 @@ TEMPLATE = """
         }
         .action-buttons {
             display: flex;
-            justify-content: space-around;
+            justify-content: center;
+            gap: 20px; /* 간격을 조절합니다 */
+            margin-bottom: 20px;
         }
     </style>
 </head>
@@ -215,16 +217,29 @@ TEMPLATE = """
         </div>
         {% endif %}
 
-        <form method="POST">
+        <form method="POST" id="action-form">
             <input type="hidden" name="range" value="{{ range_sel }}">
             <input type="hidden" name="position" value="{{ position }}">
             <input type="hidden" name="hand" value="{{ hand }}">
+            <input type="hidden" name="action" id="action-input">
             <div class="action-buttons">
                 <button type="submit" name="action" value="F" class="button fold">Fold</button>
                 <button type="submit" name="action" value="R" class="button raise">Raise</button>
             </div>
         </form>
     </div>
+
+    <script>
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'r' || event.key === 'R') {
+            document.getElementById('action-input').value = 'R';
+            document.getElementById('action-form').submit();
+        } else if (event.key === 'f' || event.key === 'F') {
+            document.getElementById('action-input').value = 'F';
+            document.getElementById('action-form').submit();
+        }
+    });
+    </script>
 </body>
 </html>
 """
