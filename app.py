@@ -37,7 +37,7 @@ def main():
             correct_attempts = 0
             position, hand = deal_preflop()
             accuracy = "0/0 correct (0.00%)"
-            return render_template_string(TEMPLATE, position=position, hand=hand, message=None, range_sel=range_sel, range_name=range_name, accuracy=accuracy)
+            return render_template_string(TEMPLATE, position=position, hand=hand, message=None, range_sel=request.form.get("range"), range_name=range_name, accuracy=accuracy)
 
         range_sel = request.form.get("range")
         hand_range = avg_range if range_sel == "1" else short_hand_range
@@ -113,6 +113,11 @@ TEMPLATE = """
         .reset:hover {
             color: #000;
         }
+        .accuracy {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
     </style>
 </head>
 <body>
@@ -129,12 +134,13 @@ TEMPLATE = """
             <p><strong>{{ message }}</strong></p>
         {% endif %}
 
-        <p>Accuracy: <strong>{{ accuracy }}</strong>
-            <form method="POST" style="display: inline;">
+        <div class="accuracy">
+            <p>Accuracy: <strong>{{ accuracy }}</strong></p>
+            <form method="POST" style="display: inline; margin-left: 10px;">
                 <input type="hidden" name="reset" value="true">
                 <button type="submit" class="reset">&#x21bb;</button>
             </form>
-        </p>
+        </div>
 
         {% if position and hand %}
             <h2>Position: {{ position }}</h2>
