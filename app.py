@@ -34,7 +34,7 @@ def main():
         action = request.form.get("action")
 
         correct, correct_action = check_action(hand_range, position, hand, action)
-        message = "Correct!" if correct else f"Incorrect. The correct action was {correct_action}."
+        message = "Previous Hand: " + ("Correct!" if correct else f"Incorrect. The correct action was {correct_action}.")
 
         # Deal new hand automatically
         position, hand = deal_preflop()
@@ -95,13 +95,13 @@ TEMPLATE = """
             <button type="submit" name="range" value="2" class="button">Short-Hand Range</button>
         </form>
 
+        {% if message %}
+            <p><strong>{{ message }}</strong></p>
+        {% endif %}
+
         {% if position and hand %}
             <h2>Position: {{ position }}</h2>
             <h2>Hand: {{ hand[0] }}, {{ hand[1] }}</h2>
-        {% endif %}
-
-        {% if message %}
-            <p>{{ message }}</p>
         {% endif %}
 
         <form method="POST">
