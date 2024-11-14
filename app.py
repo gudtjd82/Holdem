@@ -24,6 +24,7 @@ def main():
     message = None
     position, hand = None, None
     range_name = "Average Range"  # Default range name
+
     if request.method == "POST":
         range_sel = request.form.get("range")
         hand_range = avg_range if range_sel == "1" else short_hand_range
@@ -34,6 +35,9 @@ def main():
 
         correct, correct_action = check_action(hand_range, position, hand, action)
         message = "Correct!" if correct else f"Incorrect. The correct action was {correct_action}."
+
+        # Deal new hand automatically
+        position, hand = deal_preflop()
     else:
         range_sel = request.args.get("range", "1")
         hand_range = avg_range if range_sel == "1" else short_hand_range
