@@ -13,7 +13,7 @@ def range_image(filename):
     # range_img 디렉토리에서 파일 제공
     return send_from_directory(RANGE_IMG_DIR, filename)
 
-# Initialize counters for tracking action accuracy
+# 정확도 추적을 위한 카운터 초기화
 total_attempts = 0
 correct_attempts = 0
 
@@ -41,7 +41,7 @@ def main():
 
     if request.method == "POST":
         if request.form.get("reset") == "true":
-            # Reset accuracy counters
+            # 정확도 카운터 초기화
             total_attempts = 0
             correct_attempts = 0
             position, hand = deal_preflop()
@@ -52,7 +52,7 @@ def main():
         hand_range = avg_range if range_sel == "1" else short_hand_range
         range_name = "Average Range" if range_sel == "1" else "Short-Hand Range"
         position = request.form.get("position")
-        hand = eval(request.form.get("hand"))  # Convert back to tuple
+        hand = eval(request.form.get("hand"))  # 튜플로 다시 변환
         action = request.form.get("action")
 
         correct, correct_action = check_action(hand_range, position, hand, action)
@@ -61,7 +61,7 @@ def main():
             correct_attempts += 1
         message = "(Previous Hand: " + ("Correct!)" if correct else f"Incorrect. The correct action was {correct_action}.)")
 
-        # Deal new hand automatically
+        # 자동으로 새로운 핸드 배분
         position, hand = deal_preflop()
     else:
         range_sel = request.args.get("range", "1")
@@ -69,7 +69,7 @@ def main():
         range_name = "Average Range" if range_sel == "1" else "Short-Hand Range"
         position, hand = deal_preflop()
 
-    # Calculate accuracy
+    # 정확도 계산
     accuracy = f"{correct_attempts}/{total_attempts} correct ({(correct_attempts / total_attempts * 100):.2f}%)" if total_attempts > 0 else "0/0 correct (0.00%)"
 
     return render_template_string(TEMPLATE, position=position, hand=hand, message=message, range_sel=range_sel, range_name=range_name, accuracy=accuracy)
@@ -129,13 +129,23 @@ TEMPLATE = """
         }
         .accuracy {
             display: flex;
-            justify-content: center;
-            align-items: center;
             flex-direction: column;
+            align-items: center;
+        }
+        .accuracy-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
         .message {
             font-size: 12px;
             color: #555;
+        }
+        .small-link {
+            font-size: 10px;
+            margin: 0;
+            text-align: center;
         }
     </style>
 </head>
@@ -148,22 +158,28 @@ TEMPLATE = """
                 <form method="GET">
                     <button type="submit" name="range" value="1" class="button">Average Range</button>
                 </form>
-                <p class="small-link"><a href="/range_image/avg_range.jpeg" target="_blank">View Average Range</a></p>
+                <p class="small-link">
+                    <a href="/range_image/avg_range.jpeg" target="_blank">View Average Range</a>
+                </p>
             </div>
             <div>
                 <form method="GET">
                     <button type="submit" name="range" value="2" class="button">Short-Hand Range</button>
                 </form>
-                <p class="small-link"><a href="/range_image/SH_range.jpeg" target="_blank">View Short-Hand Range</a></p>
+                <p class="small-link">
+                    <a href="/range_image/SH_range.jpeg" target="_blank">View Short-Hand Range</a>
+                </p>
             </div>
         </div>
 
         <div class="accuracy">
-            <p>Accuracy: <strong>{{ accuracy }}</strong></p>
-            <form method="POST" style="display: inline; margin-left: 10px;">
-                <input type="hidden" name="reset" value="true">
-                <button type="submit" class="reset">&#x21bb;</button>
-            </form>
+            <div class="accuracy-row">
+                <p>Accuracy: <strong>{{ accuracy }}</strong></p>
+                <form method="POST">
+                    <input type="hidden" name="reset" value="true">
+                    <button type="submit" class="reset">&#x21bb;</button>
+                </form>
+            </div>
             {% if message %}
                 <p class="message">{{ message }}</p>
             {% endif %}
