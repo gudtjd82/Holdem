@@ -158,9 +158,9 @@ TEMPLATE = """
             </div>
         </div>
 
-        <div class="accuracy">
-            <p style="display: inline;">Accuracy: <strong>{{ accuracy }}</strong></p>
-            <form method="POST" style="display: inline; margin-left: 10px;">
+        <div class="accuracy" style="display: flex; align-items: center; gap: 10px;">
+            <p>Accuracy: <strong>{{ accuracy }}</strong></p>
+            <form method="POST" style="margin: 0;">
                 <input type="hidden" name="reset" value="true">
                 <button type="submit" class="reset">&#x21bb;</button>
             </form>
