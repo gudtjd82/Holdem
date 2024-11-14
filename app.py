@@ -27,15 +27,17 @@ def check_action(hand_range, position, hand, action):
 def main():
     global total_attempts, correct_attempts
     message = None
-    position, hand = None, None
-    range_name = "Average Range"  # Default range name
+    range_sel = "1"
+    range_name = "Average Range"
 
     if request.method == "POST":
         if request.form.get("reset") == "true":
             # Reset accuracy counters
             total_attempts = 0
             correct_attempts = 0
-            return render_template_string(TEMPLATE, position=None, hand=None, message=None, range_sel=request.form.get("range"), range_name=range_name, accuracy="0/0 correct (0.00%)")
+            position, hand = deal_preflop()
+            accuracy = "0/0 correct (0.00%)"
+            return render_template_string(TEMPLATE, position=position, hand=hand, message=None, range_sel=range_sel, range_name=range_name, accuracy=accuracy)
 
         range_sel = request.form.get("range")
         hand_range = avg_range if range_sel == "1" else short_hand_range
