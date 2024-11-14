@@ -127,9 +127,9 @@ TEMPLATE = """
             justify-content: center;
             align-items: center;
         }
-        .small-text {
-            font-size: 12px;
-            margin-top: -10px;
+        .small-link {
+            font-size: 10px;
+            margin-top: -5px;
         }
     </style>
 </head>
@@ -140,13 +140,10 @@ TEMPLATE = """
         <form method="GET">
             <p>Current Range: <strong>{{ range_name }}</strong></p>
             <button type="submit" name="range" value="1" class="button">Average Range</button>
+            <p class="small-link"><a href="/range_image/average_range.png" target="_blank">View Average Range</a></p>
             <button type="submit" name="range" value="2" class="button">Short-Hand Range</button>
+            <p class="small-link"><a href="/range_image/short_hand_range.png" target="_blank">View Short-Hand Range</a></p>
         </form>
-
-        <div class="small-text">
-            <p><a href="/range_image/average_range.png" target="_blank">View Average Range</a></p>
-            <p><a href="/range_image/short_hand_range.png" target="_blank">View Short-Hand Range</a></p>
-        </div>
 
         {% if message %}
             <p><strong>{{ message }}</strong></p>
