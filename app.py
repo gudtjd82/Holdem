@@ -158,10 +158,6 @@ TEMPLATE = """
             </div>
         </div>
 
-        {% if message %}
-            <p><strong>{{ message }}</strong></p>
-        {% endif %}
-
         <div class="accuracy">
             <p>Accuracy: <strong>{{ accuracy }}</strong></p>
             <form method="POST" style="display: inline; margin-left: 10px;">
@@ -169,6 +165,10 @@ TEMPLATE = """
                 <button type="submit" class="reset">&#x21bb;</button>
             </form>
         </div>
+
+        {% if message %}
+            <p><strong>{{ message }}</strong></p>
+        {% endif %}
 
         {% if position and hand %}
             <h2>Position: {{ position }}</h2>
