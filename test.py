@@ -59,7 +59,7 @@ def main():
         total_attempts += 1
         if correct:
             correct_attempts += 1
-        message = "(Previous Hand: " + ("Correct!)" if correct else f"Incorrect. The correct action was {correct_action}.)")
+        message = "Previous Hand: " + ("Correct!" if correct else f"Incorrect. The correct action was {correct_action}.")
 
         # Deal new hand automatically
         position, hand = deal_preflop()
@@ -131,11 +131,11 @@ TEMPLATE = """
             display: flex;
             justify-content: center;
             align-items: center;
-            flex-direction: column;
         }
-        .message {
-            font-size: 12px;
-            color: #555;
+        .small-link {
+            font-size: 10px;
+            margin-top: -5px;
+            text-align: center;
         }
     </style>
 </head>
@@ -164,10 +164,11 @@ TEMPLATE = """
                 <input type="hidden" name="reset" value="true">
                 <button type="submit" class="reset">&#x21bb;</button>
             </form>
-            {% if message %}
-                <p class="message">{{ message }}</p>
-            {% endif %}
         </div>
+
+        {% if message %}
+            <p><strong>{{ message }}</strong></p>
+        {% endif %}
 
         {% if position and hand %}
             <h2>Position: {{ position }}</h2>
@@ -188,3 +189,4 @@ TEMPLATE = """
 
 if __name__ == "__main__":
     app.run(debug=True)
+
