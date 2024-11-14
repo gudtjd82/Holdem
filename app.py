@@ -35,7 +35,7 @@ def main():
             # Reset accuracy counters
             total_attempts = 0
             correct_attempts = 0
-            return render_template_string(TEMPLATE, position=None, hand=None, message=None, range_sel=request.form.get("range"), range_name=range_name, accuracy=None)
+            return render_template_string(TEMPLATE, position=None, hand=None, message=None, range_sel=request.form.get("range"), range_name=range_name, accuracy="0/0 correct (0.00%)")
 
         range_sel = request.form.get("range")
         hand_range = avg_range if range_sel == "1" else short_hand_range
@@ -59,7 +59,7 @@ def main():
         position, hand = deal_preflop()
 
     # Calculate accuracy
-    accuracy = f"{correct_attempts}/{total_attempts} correct ({(correct_attempts / total_attempts * 100):.2f}%)" if total_attempts > 0 else "No attempts made yet."
+    accuracy = f"{correct_attempts}/{total_attempts} correct ({(correct_attempts / total_attempts * 100):.2f}%)" if total_attempts > 0 else "0/0 correct (0.00%)"
 
     return render_template_string(TEMPLATE, position=position, hand=hand, message=message, range_sel=range_sel, range_name=range_name, accuracy=accuracy)
 
@@ -101,8 +101,15 @@ TEMPLATE = """
             color: white;
         }
         .reset {
-            background-color: #555;
-            color: white;
+            background-color: transparent;
+            color: #555;
+            font-size: 14px;
+            padding: 5px;
+            border: none;
+            cursor: pointer;
+        }
+        .reset:hover {
+            color: #000;
         }
     </style>
 </head>
@@ -120,13 +127,12 @@ TEMPLATE = """
             <p><strong>{{ message }}</strong></p>
         {% endif %}
 
-        {% if accuracy %}
-            <p>Accuracy: <strong>{{ accuracy }}</strong></p>
+        <p>Accuracy: <strong>{{ accuracy }}</strong>
             <form method="POST" style="display: inline;">
                 <input type="hidden" name="reset" value="true">
-                <button type="submit" class="button reset">Reset Accuracy</button>
+                <button type="submit" class="reset">&#x21bb;</button>
             </form>
-        {% endif %}
+        </p>
 
         {% if position and hand %}
             <h2>Position: {{ position }}</h2>
