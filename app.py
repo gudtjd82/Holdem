@@ -23,9 +23,11 @@ def check_action(hand_range, position, hand, action):
 def main():
     message = None
     position, hand = None, None
+    range_name = "Average Range"  # Default range name
     if request.method == "POST":
         range_sel = request.form.get("range")
         hand_range = avg_range if range_sel == "1" else short_hand_range
+        range_name = "Average Range" if range_sel == "1" else "Short-Hand Range"
         position = request.form.get("position")
         hand = eval(request.form.get("hand"))  # Convert back to tuple
         action = request.form.get("action")
@@ -35,9 +37,10 @@ def main():
     else:
         range_sel = request.args.get("range", "1")
         hand_range = avg_range if range_sel == "1" else short_hand_range
+        range_name = "Average Range" if range_sel == "1" else "Short-Hand Range"
         position, hand = deal_preflop()
 
-    return render_template_string(TEMPLATE, position=position, hand=hand, message=message, range_sel=range_sel)
+    return render_template_string(TEMPLATE, position=position, hand=hand, message=message, range_sel=range_sel, range_name=range_name)
 
 TEMPLATE = """
 <!DOCTYPE html>
@@ -81,6 +84,13 @@ TEMPLATE = """
 <body>
     <div class="container">
         <h1>Texas Hold'em Trainer</h1>
+
+        <form method="GET">
+            <p>Current Range: <strong>{{ range_name }}</strong></p>
+            <button type="submit" name="range" value="1" class="button">Average Range</button>
+            <button type="submit" name="range" value="2" class="button">Short-Hand Range</button>
+        </form>
+
         {% if position and hand %}
             <h2>Position: {{ position }}</h2>
             <h2>Hand: {{ hand[0] }}, {{ hand[1] }}</h2>
@@ -96,11 +106,6 @@ TEMPLATE = """
             <input type="hidden" name="hand" value="{{ hand }}">
             <button type="submit" name="action" value="F" class="button fold">Fold</button>
             <button type="submit" name="action" value="R" class="button raise">Raise</button>
-        </form>
-
-        <form method="GET">
-            <button type="submit" name="range" value="1" class="button">Average Range</button>
-            <button type="submit" name="range" value="2" class="button">Short-Hand Range</button>
         </form>
     </div>
 </body>
