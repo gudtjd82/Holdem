@@ -82,27 +82,25 @@ TEMPLATE = """
     <title>Texas Hold'em Trainer</title>
     <style>
         body {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
             margin: 0;
-            height: 100vh;
             background-color: #f4f4f4;
             font-family: Arial, sans-serif;
         }
         .container {
-            text-align: center;
-            max-width: 90%;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
         .button-container {
             display: flex;
-            justify-content: center;
-            gap: 20px;
+            justify-content: space-around;
+            margin-bottom: 20px;
         }
         .button {
-            margin: 10px;
-            padding: 10px 20px;
+            padding: 10px 15px;
             font-size: 16px;
             border: none;
             border-radius: 5px;
@@ -128,9 +126,8 @@ TEMPLATE = """
             color: #000;
         }
         .accuracy {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            text-align: center;
+            margin-bottom: 20px;
         }
         .accuracy-row {
             display: flex;
@@ -147,13 +144,37 @@ TEMPLATE = """
             margin: 0;
             text-align: center;
         }
+        .info-box {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            background-color: #fafafa;
+        }
+        .info-box h2 {
+            margin: 5px 0;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .range-title {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .action-buttons {
+            display: flex;
+            justify-content: space-around;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Texas Hold'em Trainer</h1>
 
-        <h2>Current Range: {{ range_name }}</h2>
+        <div class="range-title">
+            <h2>Current Range: {{ range_name }}</h2>
+        </div>
 
         <div class="button-container">
             <div>
@@ -188,16 +209,20 @@ TEMPLATE = """
         </div>
 
         {% if position and hand %}
+        <div class="info-box">
             <h2>Position: {{ position }}</h2>
             <h2>Hand: {{ hand[0] }}, {{ hand[1] }}</h2>
+        </div>
         {% endif %}
 
         <form method="POST">
             <input type="hidden" name="range" value="{{ range_sel }}">
             <input type="hidden" name="position" value="{{ position }}">
             <input type="hidden" name="hand" value="{{ hand }}">
-            <button type="submit" name="action" value="F" class="button fold">Fold</button>
-            <button type="submit" name="action" value="R" class="button raise">Raise</button>
+            <div class="action-buttons">
+                <button type="submit" name="action" value="F" class="button fold">Fold</button>
+                <button type="submit" name="action" value="R" class="button raise">Raise</button>
+            </div>
         </form>
     </div>
 </body>
