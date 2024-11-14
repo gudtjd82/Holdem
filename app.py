@@ -127,6 +127,10 @@ TEMPLATE = """
             justify-content: center;
             align-items: center;
         }
+        .small-text {
+            font-size: 12px;
+            margin-top: -10px;
+        }
     </style>
 </head>
 <body>
@@ -139,6 +143,11 @@ TEMPLATE = """
             <button type="submit" name="range" value="2" class="button">Short-Hand Range</button>
         </form>
 
+        <div class="small-text">
+            <p><a href="/range_image/average_range.png" target="_blank">View Average Range</a></p>
+            <p><a href="/range_image/short_hand_range.png" target="_blank">View Short-Hand Range</a></p>
+        </div>
+
         {% if message %}
             <p><strong>{{ message }}</strong></p>
         {% endif %}
@@ -150,14 +159,6 @@ TEMPLATE = """
                 <button type="submit" class="reset">&#x21bb;</button>
             </form>
         </div>
-
-        <h2>Hand Range Images:</h2>
-        <p>
-            <a href="/range_image/avg_range.jpeg" target="_blank">View Average Range</a>
-        </p>
-        <p>
-            <a href="/range_image/SH_range.jpeg" target="_blank">View Short-Hand Range</a>
-        </p>
 
         {% if position and hand %}
             <h2>Position: {{ position }}</h2>
