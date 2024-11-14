@@ -1,8 +1,17 @@
-from flask import Flask, request, render_template_string
+from flask import Flask, request, render_template_string, send_from_directory
 import random
+import os
 from hand_range import *
 
 app = Flask(__name__)
+
+# 정적 디렉토리 설정
+RANGE_IMG_DIR = os.path.join(os.path.dirname(__file__), 'range_img')
+
+@app.route("/range_image/<filename>")
+def range_image(filename):
+    # range_img 디렉토리에서 파일 제공
+    return send_from_directory(RANGE_IMG_DIR, filename)
 
 # Initialize counters for tracking action accuracy
 total_attempts = 0
@@ -141,6 +150,14 @@ TEMPLATE = """
                 <button type="submit" class="reset">&#x21bb;</button>
             </form>
         </div>
+
+        <h2>Hand Range Images:</h2>
+        <p>
+            <a href="/range_image/avg_range.jpeg" target="_blank">View Average Range</a>
+        </p>
+        <p>
+            <a href="/range_image/SH_range.jpeg" target="_blank">View Short-Hand Range</a>
+        </p>
 
         {% if position and hand %}
             <h2>Position: {{ position }}</h2>
