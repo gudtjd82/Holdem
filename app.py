@@ -1,9 +1,10 @@
-from flask import Flask, request, render_template_string, send_from_directory
+from flask import Flask, request, render_template_string, send_from_directory, session
 import random
 import os
 from hand_range import *
 
 app = Flask(__name__)
+app.secret_key = 'your_secret_key_here'  # 비밀 키를 설정합니다.
 
 # 정적 디렉토리 설정
 RANGE_IMG_DIR = os.path.join(os.path.dirname(__file__), 'range_img')
@@ -12,10 +13,6 @@ RANGE_IMG_DIR = os.path.join(os.path.dirname(__file__), 'range_img')
 def range_image(filename):
     # range_img 디렉토리에서 파일 제공
     return send_from_directory(RANGE_IMG_DIR, filename)
-
-# 정확도 추적을 위한 카운터 초기화
-total_attempts = 0
-correct_attempts = 0
 
 def deal_preflop():
     position = random.choice(positions)
@@ -34,47 +31,100 @@ def check_action(hand_range, position, hand, action):
 
 @app.route("/", methods=["GET", "POST"])
 def main():
-    global total_attempts, correct_attempts
+    # 세션에서 카운터와 변수를 초기화
+    if 'total_attempts' not in session:
+        session['total_attempts'] = 0
+    if 'correct_attempts' not in session:
+        session['correct_attempts'] = 0
+    if 'action_taken' not in session:
+        session['action_taken'] = False
+
     message = None
-    range_sel = "1"
-    range_name = "Average Range"
+    range_sel = session.get('range_sel', '1')
+    range_name = "Average Range" if range_sel == "1" else "Short-Hand Range"
 
     if request.method == "POST":
         if request.form.get("reset") == "true":
-            # 정확도 카운터 초기화
-            total_attempts = 0
-            correct_attempts = 0
+            # 카운터 리셋
+            session['total_attempts'] = 0
+            session['correct_attempts'] = 0
+            session['action_taken'] = False
+            # 새로운 핸드 배분
             position, hand = deal_preflop()
-            accuracy = "0/0 correct (0.00%)"
-            return render_template_string(TEMPLATE, position=position, hand=hand, message=None, range_sel=request.form.get("range"), range_name=range_name, accuracy=accuracy)
+            session['current_position'] = position
+            session['current_hand'] = hand
+            session['previous_position'] = None
+            session['previous_hand'] = None
+            message = "Counters have been reset."
+        elif request.form.get("action") == "previous":
+            # 이전 핸드로 돌아가기
+            if session.get('previous_position') and session.get('previous_hand'):
+                session['current_position'] = session['previous_position']
+                session['current_hand'] = session['previous_hand']
+                session['action_taken'] = False
+                message = "Returned to previous hand."
+            else:
+                message = "No previous hand available."
+        else:
+            # 액션 처리
+            range_sel = request.form.get("range", session.get('range_sel', '1'))
+            session['range_sel'] = range_sel
+            hand_range = avg_range if range_sel == "1" else short_hand_range
+            range_name = "Average Range" if range_sel == "1" else "Short-Hand Range"
 
-        range_sel = request.form.get("range")
-        hand_range = avg_range if range_sel == "1" else short_hand_range
-        range_name = "Average Range" if range_sel == "1" else "Short-Hand Range"
-        position = request.form.get("position")
-        hand = eval(request.form.get("hand"))  # 튜플로 다시 변환
+            position = session.get('current_position')
+            hand = session.get('current_hand')
+            action = request.form.get("action") or request.form.get("key_action")
 
-        # 수정된 부분: action 값을 제대로 가져오기 위해 key_action도 확인
-        action = request.form.get("action") or request.form.get("key_action")
+            if not session['action_taken']:
+                # 액션 처리
+                correct, correct_action = check_action(hand_range, position, hand, action)
+                session['total_attempts'] += 1
+                if correct:
+                    session['correct_attempts'] += 1
+                message = "(Previous Hand: " + ("Correct!)" if correct else f"Incorrect. The correct action was {correct_action}.)")
+                session['action_taken'] = True
+            else:
+                # 이미 액션을 선택한 경우
+                message = "Action already taken on this hand."
 
-        correct, correct_action = check_action(hand_range, position, hand, action)
-        total_attempts += 1
-        if correct:
-            correct_attempts += 1
-        message = "(Previous Hand: " + ("Correct!)" if correct else f"Incorrect. The correct action was {correct_action}.)")
+            # 현재 핸드를 이전 핸드로 저장
+            session['previous_position'] = session['current_position']
+            session['previous_hand'] = session['current_hand']
 
-        # 자동으로 새로운 핸드 배분
-        position, hand = deal_preflop()
+            # 새로운 핸드 배분
+            position, hand = deal_preflop()
+            session['current_position'] = position
+            session['current_hand'] = hand
+            session['action_taken'] = False
+
     else:
-        range_sel = request.args.get("range", "1")
-        hand_range = avg_range if range_sel == "1" else short_hand_range
-        range_name = "Average Range" if range_sel == "1" else "Short-Hand Range"
-        position, hand = deal_preflop()
+        # GET 요청 처리
+        if request.args.get('range'):
+            range_sel = request.args.get('range')
+            session['range_sel'] = range_sel
+            range_name = "Average Range" if range_sel == "1" else "Short-Hand Range"
+            # 새로운 핸드 배분
+            position, hand = deal_preflop()
+            session['current_position'] = position
+            session['current_hand'] = hand
+            session['action_taken'] = False
+        else:
+            # 기존 핸드 사용 또는 새로운 핸드 배분
+            position = session.get('current_position')
+            hand = session.get('current_hand')
+            if not position or not hand:
+                position, hand = deal_preflop()
+                session['current_position'] = position
+                session['current_hand'] = hand
+                session['action_taken'] = False
 
     # 정확도 계산
+    total_attempts = session['total_attempts']
+    correct_attempts = session['correct_attempts']
     accuracy = f"{correct_attempts}/{total_attempts} correct ({(correct_attempts / total_attempts * 100):.2f}%)" if total_attempts > 0 else "0/0 correct (0.00%)"
 
-    return render_template_string(TEMPLATE, position=position, hand=hand, message=message, range_sel=range_sel, range_name=range_name, accuracy=accuracy)
+    return render_template_string(TEMPLATE, position=session['current_position'], hand=session['current_hand'], message=message, range_sel=range_sel, range_name=range_name, accuracy=accuracy)
 
 TEMPLATE = """
 <!DOCTYPE html>
@@ -167,8 +217,12 @@ TEMPLATE = """
         .action-buttons {
             display: flex;
             justify-content: center;
-            gap: 20px; /* 간격을 조절합니다 */
+            gap: 10px; /* 간격을 조절합니다 */
             margin-bottom: 20px;
+        }
+        .previous {
+            background-color: #007BFF;
+            color: white;
         }
     </style>
 </head>
@@ -226,6 +280,7 @@ TEMPLATE = """
             <!-- 이름을 변경하여 충돌을 방지합니다 -->
             <input type="hidden" name="key_action" id="key-action-input">
             <div class="action-buttons">
+                <button type="submit" name="action" value="previous" class="button previous">Previous Hand</button>
                 <button type="submit" name="action" value="F" class="button fold">Fold</button>
                 <button type="submit" name="action" value="R" class="button raise">Raise</button>
             </div>
@@ -239,6 +294,9 @@ TEMPLATE = """
             document.getElementById('action-form').submit();
         } else if (event.key === 'f' || event.key === 'F') {
             document.getElementById('key-action-input').value = 'F';
+            document.getElementById('action-form').submit();
+        } else if (event.key === 'e' || event.key === 'E') {
+            document.getElementById('key-action-input').value = 'previous';
             document.getElementById('action-form').submit();
         }
     });
