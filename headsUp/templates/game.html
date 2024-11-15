@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>텍사스 홀덤 게임</title>
+</head>
+<body>
+    <h1>텍사스 홀덤 게임</h1>
+    <div id="game-info">
+        <p>게임 ID: {{ game_id }}</p>
+        <p id="player-info"></p>
+        <p id="community-cards"></p>
+        <p id="pot-info"></p>
+    </div>
+    <div id="player-hand">
+        <h3>내 핸드:</h3>
+        <ul id="hand-cards"></ul>
+    </div>
+    <div id="actions">
+        <button onclick="placeBet(10)">10 베팅</button>
+        <button onclick="fold()">폴드</button>
+    </div>
+    <div id="messages"></div>
+
+    <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.slim.js"></script>
+    <script>
+        var socket = io();
+        var username = "{{ session['username'] }}";
+        var game_id = "{{ game_id }}";
+
+        socket.emit('join', {'username': username, 'game_id': game_id});
+
+        socket.on('player_joined', function(data) {
+            document.getElementById('messages').innerHTML += '<p>' + data.username + ' 님이 게임에 참여했습니다.</p>';
+        });
+
+        socket.on('start_game', function(data) {
+            document.getElementById('player-info').innerHTML = '플레이어: ' + data.players.join(', ');
+        });
+
+        socket.on('deal_hand', function(data) {
+            var handCards = document.getElementById('hand-cards');
+            handCards.innerHTML = '';  // 기존 카드 제거
+            data.hand.forEach(function(card) {
+                var li = document.createElement('li');
+                li.textContent = card;
+                handCards.appendChild(li);
+            });
+        });
+
+        socket.on('bet_placed', function(data) {
+            document.getElementById('messages').innerHTML += '<p>' + data.username + ' 님이 ' + data.bet_amount + ' 만큼 베팅했습니다.</p>';
+            document.getElementById('pot-info').innerHTML = '현재 팟: ' + data.pot;
+        });
+
+        socket.on('update_community', function(data) {
+            document.getElementById('community-cards').innerHTML = '커뮤니티 카드: ' + data.community_cards.join(', ');
+        });
+
+        socket.on('player_folded', function(data) {
+            document.getElementById('messages').innerHTML += '<p>' + data.username + ' 님이 폴드했습니다.</p>';
+        });
+
+        socket.on('showdown', function(data) {
+            document.getElementById('messages').innerHTML += '<p>' + data.winner + ' 님이 ' + data.pot + ' 을(를) 획득했습니다!</p>';
+        });
+
+        function placeBet(amount) {
+            socket.emit('place_bet', {'bet_amount': amount});
+        }
+
+        function fold() {
+            socket.emit('fold');
+        }
+    </script>
+</body>
+</html>

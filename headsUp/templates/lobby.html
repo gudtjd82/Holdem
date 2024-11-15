@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>게임 로비</title>
+</head>
+<body>
+    <h1>게임 로비</h1>
+    <p>게임 ID: {{ game_id }}</p>
+    <p>다른 플레이어의 참여를 기다리는 중...</p>
+    <form action="/game">
+        <input type="hidden" name="game_id" value="{{ game_id }}">
+        <label>사용자 이름을 입력하세요:</label>
+        <input type="text" name="username" required>
+        <button type="submit">게임 시작</button>
+    </form>
+</body>
+</html>
