@@ -101,21 +101,25 @@ def on_join(data):
 
 @socketio.on('place_bet')
 def on_place_bet(data):
-    game_id = session['game_id']
+    table_id = session['table_id']
     username = session['username']
     bet_amount = int(data['bet_amount'])
 
-    game = games[game_id]
+    game = games[table_id]
     player = next(p for p in game['players'] if p['username'] == username)
     player['chips'] -= bet_amount
     player['current_bet'] += bet_amount
     game['pot'] += bet_amount
 
-    emit('bet_placed', {'username': username, 'bet_amount': bet_amount, 'chips': player['chips'], 'pot': game['pot']}, room=game_id)
+    emit('bet_placed', {
+        'username': username,
+        'bet_amount': bet_amount,
+        'chips': player['chips'],
+        'pot': game['pot']
+    }, room=table_id)
 
-    # 간단한 베팅 라운드 로직
+    # 베팅 라운드 로직
     if all(p['current_bet'] > 0 for p in game['players']):
-        # 다음 단계로 진행 (예: 플랍, 턴, 리버)
         if len(game['community_cards']) < 5:
             # 커뮤니티 카드 배분
             if len(game['community_cards']) == 0:
@@ -127,7 +131,9 @@ def on_place_bet(data):
             # 현재 베팅 초기화
             for p in game['players']:
                 p['current_bet'] = 0
-            emit('update_community', {'community_cards': game['community_cards']}, room=game_id)
+            emit('update_community', {
+                'community_cards': game['community_cards']
+            }, room=table_id)
         else:
             # 쇼다운
             active_players = [p for p in game['players'] if not p['has_folded']]
@@ -146,31 +152,57 @@ def on_place_bet(data):
                 winner_player = next(p for p in active_players if p['username'] == winner_name)
                 winner_player['chips'] += game['pot']
 
-                emit('showdown', {'winner': winner_name, 'pot': game['pot']}, room=game_id)
+                # 각 플레이어의 칩 정보 업데이트
+                for p in game['players']:
+                    emit('update_chips', {
+                        'username': p['username'],
+                        'chips': p['chips']
+                    }, room=p['sid'])
+
+                emit('showdown', {
+                    'winner': winner_name,
+                    'pot': game['pot']
+                }, room=table_id)
             else:
-                emit('showdown', {'winner': None, 'pot': game['pot']}, room=game_id)
+                emit('showdown', {
+                    'winner': None,
+                    'pot': game['pot']
+                }, room=table_id)
+
             # 게임 초기화
-            games.pop(game_id)
+            reset_game(game)
 
 @socketio.on('fold')
 def on_fold():
-    game_id = session['game_id']
+    table_id = session['table_id']
     username = session['username']
 
-    game = games[game_id]
+    game = games[table_id]
     player = next(p for p in game['players'] if p['username'] == username)
     player['has_folded'] = True
 
-    emit('player_folded', {'username': username}, room=game_id)
+    emit('player_folded', {'username': username}, room=table_id)
 
     # 남은 플레이어가 한 명인지 확인
     active_players = [p for p in game['players'] if not p['has_folded']]
     if len(active_players) == 1:
         winner = active_players[0]
         winner['chips'] += game['pot']
-        emit('showdown', {'winner': winner['username'], 'pot': game['pot']}, room=game_id)
+
+        # 각 플레이어의 칩 정보 업데이트
+        for p in game['players']:
+            emit('update_chips', {
+                'username': p['username'],
+                'chips': p['chips']
+            }, room=p['sid'])
+
+        emit('showdown', {
+            'winner': winner['username'],
+            'pot': game['pot']
+        }, room=table_id)
+
         # 게임 초기화
-        games.pop(game_id)
+        reset_game(game)
 
 @socketio.on('request_chips')
 def on_request_chips():

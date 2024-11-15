@@ -1,3 +1,5 @@
+import random
+
 # 포지션 목록
 positions = ["EP", "MP", "LP", "BTN", "SB", "BB"]
 
@@ -90,3 +92,17 @@ def get_best_hand(cards):
                 best_rank = evaluated
                 best_hand = combo
     return best_hand
+
+def reset_game(game):
+    """
+    게임 상태를 초기화하지만 플레이어들의 칩 정보는 유지합니다.
+    """
+    game['deck'] = create_deck()
+    random.shuffle(game['deck'])
+    game['community_cards'] = []
+    game['current_bets'] = {}
+    game['pot'] = 0
+    for player in game['players']:
+        player['hand'] = deal_cards(game['deck'], 2)
+        player['current_bet'] = 0
+        player['has_folded'] = False
