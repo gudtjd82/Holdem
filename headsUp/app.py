@@ -18,66 +18,86 @@ games = {}
 # RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10',
 #          'J', 'Q', 'K', 'A']
 
-
-
 @app.route('/')
 def index():
     return render_template('index.html')
 
 @app.route('/game')
 def game():
-    # 게임 ID 생성 또는 가져오기
-    game_id = request.args.get('game_id')
-    if not game_id:
-        game_id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
-        return render_template('lobby.html', game_id=game_id)
+    # 테이블 ID 생성 또는 가져오기
+    table_id = request.args.get('table_id')
+    starting_chips = request.args.get('starting_chips', type=int)
+
+    if not table_id:
+        # 새로운 테이블 생성
+        table_id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+        if starting_chips is None:
+            starting_chips = 1000  # 기본 시작 칩 액수 설정
+        session['starting_chips'] = starting_chips
+        return render_template('lobby.html', table_id=table_id)
     else:
-        session['game_id'] = game_id
+        # 기존 테이블에 참여
+        session['table_id'] = table_id
         username = request.args.get('username')
         if username:
             session['username'] = username
-            return render_template('game.html', game_id=game_id)
+            return render_template('game.html', table_id=table_id)
+        elif 'username' in session:
+            # 세션에 사용자 이름이 있으면 게임으로 이동
+            return render_template('game.html', table_id=table_id)
         else:
-            return render_template('lobby.html', game_id=game_id)
+            # 사용자 이름이 없으면 로비로 이동
+            return render_template('lobby.html', table_id=table_id)
 
+@socketio.on('join')
 @socketio.on('join')
 def on_join(data):
     username = data['username']
-    game_id = data['game_id']
+    table_id = data['table_id']
     session['username'] = username
-    join_room(game_id)
+    session['table_id'] = table_id
+    join_room(table_id)
 
-    if game_id not in games:
-        # 새로운 게임 초기화
-        games[game_id] = {
+    if table_id not in games:
+        # 새로운 테이블 초기화
+        starting_chips = session.get('starting_chips', 1000)  # 기본값 1000
+        games[table_id] = {
             'players': [],
             'deck': create_deck(),
             'community_cards': [],
             'current_bets': {},
-            'pot': 0
+            'pot': 0,
+            'starting_chips': starting_chips
         }
-        random.shuffle(games[game_id]['deck'])
+        random.shuffle(games[table_id]['deck'])
 
-    game = games[game_id]
-    # 이미 참여한 플레이어인지 확인
-    if username not in [p['username'] for p in game['players']]:
-        game['players'].append({
+    game = games[table_id]
+
+    # 플레이어가 이미 게임에 있는지 확인
+    player = next((p for p in game['players'] if p['username'] == username), None)
+    if player:
+        # 플레이어의 sid 업데이트
+        player['sid'] = request.sid
+    else:
+        # 새로운 플레이어 추가
+        player = {
             'username': username,
             'hand': deal_cards(game['deck'], 2),
-            'chips': 1000,
+            'chips': game['starting_chips'],  # 시작 칩 액수 사용
             'current_bet': 0,
-            'has_folded': False
-        })
+            'has_folded': False,
+            'sid': request.sid  # Socket.IO 세션 ID 저장
+        }
+        game['players'].append(player)
 
-    emit('player_joined', {'username': username}, room=game_id)
+    emit('player_joined', {'username': username}, room=table_id)
+
+    # 플레이어에게 자신의 핸드 전송
+    emit('deal_hand', {'hand': player['hand']}, room=player['sid'])
 
     if len(game['players']) == 2:
         # 두 명의 플레이어가 참여하면 게임 시작
-        emit('start_game', {'players': [p['username'] for p in game['players']]}, room=game_id)
-        # 초기 핸드 전송
-        for player in game['players']:
-            sid = request.sid if player['username'] == username else None
-            emit('deal_hand', {'hand': player['hand']}, room=sid)
+        emit('start_game', {'players': [p['username'] for p in game['players']]}, room=table_id)
 
 @socketio.on('place_bet')
 def on_place_bet(data):
@@ -151,6 +171,17 @@ def on_fold():
         emit('showdown', {'winner': winner['username'], 'pot': game['pot']}, room=game_id)
         # 게임 초기화
         games.pop(game_id)
+
+@socketio.on('request_chips')
+def on_request_chips():
+    username = session['username']
+    table_id = session['table_id']
+    game = games.get(table_id)
+    if game:
+        player = next((p for p in game['players'] if p['username'] == username), None)
+        if player:
+            emit('update_chips', {'username': username, 'chips': player['chips']}, room=player['sid'])
+
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5001))

@@ -6,8 +6,9 @@
 <body>
     <h1>텍사스 홀덤 게임</h1>
     <div id="game-info">
-        <p>게임 ID: {{ game_id }}</p>
+        <p>테이블 ID: {{ table_id }}</p>
         <p id="player-info"></p>
+        <p id="player-chips"></p>
         <p id="community-cards"></p>
         <p id="pot-info"></p>
     </div>
@@ -25,9 +26,9 @@
     <script>
         var socket = io();
         var username = "{{ session['username'] }}";
-        var game_id = "{{ game_id }}";
+        var table_id = "{{ table_id }}";
 
-        socket.emit('join', {'username': username, 'game_id': game_id});
+        socket.emit('join', {'username': username, 'table_id': table_id});
 
         socket.on('player_joined', function(data) {
             document.getElementById('messages').innerHTML += '<p>' + data.username + ' 님이 게임에 참여했습니다.</p>';
@@ -71,6 +72,20 @@
         function fold() {
             socket.emit('fold');
         }
+
+        function updatePlayerChips(chips) {
+            document.getElementById('player-chips').innerHTML = '내 칩: ' + chips;
+        }
+
+        socket.on('update_chips', function(data) {
+            if (data.username === username) {
+                updatePlayerChips(data.chips);
+            }
+        });
+        
+        socket.on('connect', function() {
+            socket.emit('request_chips');
+        });
     </script>
 </body>
 </html>
