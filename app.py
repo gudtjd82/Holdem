@@ -4,7 +4,7 @@ import os
 from hand_range import *
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key_here'  # 비밀 키를 설정합니다.
+app.secret_key = 'your_secret_key_here'  # 세션을 사용하기 위한 비밀 키 설정
 
 # 정적 디렉토리 설정
 RANGE_IMG_DIR = os.path.join(os.path.dirname(__file__), 'range_img')
@@ -56,48 +56,52 @@ def main():
             session['previous_position'] = None
             session['previous_hand'] = None
             message = "Counters have been reset."
-        elif request.form.get("action") == "previous":
-            # 이전 핸드로 돌아가기
-            if session.get('previous_position') and session.get('previous_hand'):
-                session['current_position'] = session['previous_position']
-                session['current_hand'] = session['previous_hand']
-                session['action_taken'] = False
-                message = "Returned to previous hand."
-            else:
-                message = "No previous hand available."
         else:
-            # 액션 처리
-            range_sel = request.form.get("range", session.get('range_sel', '1'))
-            session['range_sel'] = range_sel
-            hand_range = avg_range if range_sel == "1" else short_hand_range
-            range_name = "Average Range" if range_sel == "1" else "Short-Hand Range"
-
-            position = session.get('current_position')
-            hand = session.get('current_hand')
+            # 액션 가져오기
             action = request.form.get("action") or request.form.get("key_action")
 
-            if not session['action_taken']:
+            if action == "previous":
+                # 이전 핸드로 돌아가기
+                if session.get('previous_position') and session.get('previous_hand'):
+                    session['current_position'] = session['previous_position']
+                    session['current_hand'] = session['previous_hand']
+                    session['action_taken'] = False
+                    message = "Returned to previous hand."
+                else:
+                    message = "No previous hand available."
+            elif action in ['F', 'R']:
                 # 액션 처리
-                correct, correct_action = check_action(hand_range, position, hand, action)
-                session['total_attempts'] += 1
-                if correct:
-                    session['correct_attempts'] += 1
-                message = "(Previous Hand: " + ("Correct!)" if correct else f"Incorrect. The correct action was {correct_action}.)")
-                session['action_taken'] = True
+                range_sel = request.form.get("range", session.get('range_sel', '1'))
+                session['range_sel'] = range_sel
+                hand_range = avg_range if range_sel == "1" else short_hand_range
+                range_name = "Average Range" if range_sel == "1" else "Short-Hand Range"
+
+                position = session.get('current_position')
+                hand = session.get('current_hand')
+
+                if not session['action_taken']:
+                    correct, correct_action = check_action(hand_range, position, hand, action)
+                    session['total_attempts'] += 1
+                    if correct:
+                        session['correct_attempts'] += 1
+                    message = "(Previous Hand: " + ("Correct!)" if correct else f"Incorrect. The correct action was {correct_action}.)")
+                    session['action_taken'] = True
+
+                    # 현재 핸드를 이전 핸드로 저장
+                    session['previous_position'] = session['current_position']
+                    session['previous_hand'] = session['current_hand']
+
+                    # 새로운 핸드 배분
+                    position, hand = deal_preflop()
+                    session['current_position'] = position
+                    session['current_hand'] = hand
+                    session['action_taken'] = False
+                else:
+                    # 이미 액션을 선택한 경우
+                    message = "Action already taken on this hand."
             else:
-                # 이미 액션을 선택한 경우
-                message = "Action already taken on this hand."
-
-            # 현재 핸드를 이전 핸드로 저장
-            session['previous_position'] = session['current_position']
-            session['previous_hand'] = session['current_hand']
-
-            # 새로운 핸드 배분
-            position, hand = deal_preflop()
-            session['current_position'] = position
-            session['current_hand'] = hand
-            session['action_taken'] = False
-
+                # 유효하지 않은 액션 처리
+                message = "Invalid action."
     else:
         # GET 요청 처리
         if request.args.get('range'):
@@ -223,6 +227,7 @@ TEMPLATE = """
         .previous {
             background-color: #007BFF;
             color: white;
+            width: 50px; /* 버튼 너비 조절 */
         }
     </style>
 </head>
@@ -280,7 +285,8 @@ TEMPLATE = """
             <!-- 이름을 변경하여 충돌을 방지합니다 -->
             <input type="hidden" name="key_action" id="key-action-input">
             <div class="action-buttons">
-                <button type="submit" name="action" value="previous" class="button previous">Previous Hand</button>
+                <!-- 버튼 내용을 왼쪽 화살표로 변경 -->
+                <button type="submit" name="action" value="previous" class="button previous">&#x2190;</button>
                 <button type="submit" name="action" value="F" class="button fold">Fold</button>
                 <button type="submit" name="action" value="R" class="button raise">Raise</button>
             </div>
