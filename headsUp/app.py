@@ -8,7 +8,7 @@ from card import *
 app = Flask(__name__)
 # app.secret_key = 'tjdgus02@@'  # 보안을 위해 실제 비밀 키로 변경하세요.
 app.secret_key = os.environ.get('SECRET_KEY', 'tjdgus02@@')
-socketio = SocketIO(app, manage_session=False)
+socketio = SocketIO(app, manage_session=True)
 
 # 게임 상태 관리
 games = {}
