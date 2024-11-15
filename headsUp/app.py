@@ -22,48 +22,37 @@ games = {}
 def index():
     return render_template('index.html')
 
-@app.route('/game', methods=['GET', 'POST'])
+@app.route('/game')
 def game():
-    # 테이블 ID 생성 또는 가져오기
     table_id = request.args.get('table_id')
-    starting_chips = session.get('starting_chips', 1000)
-
-    if request.method == 'POST':
-        # 닉네임을 폼 데이터에서 가져옴
-        username = request.form.get('username')
-        if username:
-            session['username'] = username
-            session['table_id'] = table_id
-            return render_template('game.html', table_id=table_id)
-        else:
-            # 닉네임이 없으면 로비로 다시 이동
-            return render_template('lobby.html', table_id=table_id)
+    username = request.args.get('username')
+    starting_chips = request.args.get('starting_chips', type=int)
 
     if not table_id:
         # 새로운 테이블 생성
         table_id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
-        session['starting_chips'] = starting_chips
-        return render_template('lobby.html', table_id=table_id)
+        if starting_chips is None:
+            starting_chips = 1000  # 기본 시작 칩 액수 설정
     else:
         # 기존 테이블에 참여
-        username = session.get('username')
-        if username:
-            return render_template('game.html', table_id=table_id)
-        else:
-            # 닉네임 입력이 필요함
-            return render_template('lobby.html', table_id=table_id)
+        if starting_chips is None:
+            starting_chips = 1000  # 기본 시작 칩 액수 설정
+
+    session['table_id'] = table_id
+    session['username'] = username
+    session['starting_chips'] = starting_chips
+
+    return render_template('game.html', table_id=table_id)
 
 @socketio.on('join')
-def on_join(data):
-    username = data['username']
-    table_id = data['table_id']
-    session['username'] = username
-    session['table_id'] = table_id
+def on_join():
+    username = session['username']
+    table_id = session['table_id']
+    starting_chips = session['starting_chips']
     join_room(table_id)
 
     if table_id not in games:
-        # 새로운 테이블 초기화
-        starting_chips = session.get('starting_chips', 1000)  # 기본값 1000
+        # 새로운 게임 초기화
         games[table_id] = {
             'players': [],
             'deck': create_deck(),
@@ -86,7 +75,7 @@ def on_join(data):
         player = {
             'username': username,
             'hand': deal_cards(game['deck'], 2),
-            'chips': game['starting_chips'],  # 시작 칩 액수 사용
+            'chips': game['starting_chips'],
             'current_bet': 0,
             'has_folded': False,
             'sid': request.sid  # Socket.IO 세션 ID 저장
@@ -216,6 +205,31 @@ def on_request_chips():
         player = next((p for p in game['players'] if p['username'] == username), None)
         if player:
             emit('update_chips', {'username': username, 'chips': player['chips']}, room=player['sid'])
+
+@socketio.on('leave_table')
+def on_leave_table():
+    username = session.get('username')
+    table_id = session.get('table_id')
+
+    if not username or not table_id:
+        return
+
+    game = games.get(table_id)
+    if game:
+        player = next((p for p in game['players'] if p['username'] == username), None)
+        if player:
+            game['players'].remove(player)
+            leave_room(table_id)
+            emit('player_left', {'username': username}, room=table_id)
+
+        # 만약 플레이어가 모두 나갔다면 게임을 삭제합니다.
+        if len(game['players']) == 0:
+            games.pop(table_id)
+
+    # 세션 정보 삭제
+    session.pop('username', None)
+    session.pop('table_id', None)
+    session.pop('starting_chips', None)
 
 
 if __name__ == '__main__':
