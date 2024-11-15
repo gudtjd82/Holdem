@@ -55,6 +55,8 @@ def main():
             session['current_hand'] = hand
             session['previous_position'] = None
             session['previous_hand'] = None
+            session['previous_total_attempts'] = 0
+            session['previous_correct_attempts'] = 0
             message = "Counters have been reset."
         else:
             # 액션 가져오기
@@ -63,6 +65,10 @@ def main():
             if action == "previous":
                 # 이전 핸드로 돌아가기
                 if session.get('previous_position') and session.get('previous_hand'):
+                    # 현재 카운터를 이전 카운터로 복원
+                    session['total_attempts'] = session.get('previous_total_attempts', session['total_attempts'])
+                    session['correct_attempts'] = session.get('previous_correct_attempts', session['correct_attempts'])
+                    # 현재 핸드를 이전 핸드로 복원
                     session['current_position'] = session['previous_position']
                     session['current_hand'] = session['previous_hand']
                     session['action_taken'] = False
@@ -80,16 +86,19 @@ def main():
                 hand = session.get('current_hand')
 
                 if not session['action_taken']:
+                    # 이전 카운터 저장
+                    session['previous_total_attempts'] = session['total_attempts']
+                    session['previous_correct_attempts'] = session['correct_attempts']
+                    # 현재 핸드를 이전 핸드로 저장
+                    session['previous_position'] = session['current_position']
+                    session['previous_hand'] = session['current_hand']
+
                     correct, correct_action = check_action(hand_range, position, hand, action)
                     session['total_attempts'] += 1
                     if correct:
                         session['correct_attempts'] += 1
                     message = "(Previous Hand: " + ("Correct!)" if correct else f"Incorrect. The correct action was {correct_action}.)")
                     session['action_taken'] = True
-
-                    # 현재 핸드를 이전 핸드로 저장
-                    session['previous_position'] = session['current_position']
-                    session['previous_hand'] = session['current_hand']
 
                     # 새로운 핸드 배분
                     position, hand = deal_preflop()
@@ -228,6 +237,10 @@ TEMPLATE = """
             background-color: #007BFF;
             color: white;
             width: 50px; /* 버튼 너비 조절 */
+        }
+        /* 이전 버튼을 왼쪽 끝으로 붙입니다 */
+        .action-buttons button:first-child {
+            margin-right: auto;
         }
     </style>
 </head>
