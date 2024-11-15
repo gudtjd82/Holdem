@@ -53,7 +53,9 @@ def main():
         range_name = "Average Range" if range_sel == "1" else "Short-Hand Range"
         position = request.form.get("position")
         hand = eval(request.form.get("hand"))  # 튜플로 다시 변환
-        action = request.form.get("action")
+
+        # 수정된 부분: action 값을 제대로 가져오기 위해 key_action도 확인
+        action = request.form.get("action") or request.form.get("key_action")
 
         correct, correct_action = check_action(hand_range, position, hand, action)
         total_attempts += 1
@@ -221,7 +223,8 @@ TEMPLATE = """
             <input type="hidden" name="range" value="{{ range_sel }}">
             <input type="hidden" name="position" value="{{ position }}">
             <input type="hidden" name="hand" value="{{ hand }}">
-            <input type="hidden" name="action" id="action-input">
+            <!-- 이름을 변경하여 충돌을 방지합니다 -->
+            <input type="hidden" name="key_action" id="key-action-input">
             <div class="action-buttons">
                 <button type="submit" name="action" value="F" class="button fold">Fold</button>
                 <button type="submit" name="action" value="R" class="button raise">Raise</button>
@@ -232,10 +235,10 @@ TEMPLATE = """
     <script>
     document.addEventListener('keydown', function(event) {
         if (event.key === 'r' || event.key === 'R') {
-            document.getElementById('action-input').value = 'R';
+            document.getElementById('key-action-input').value = 'R';
             document.getElementById('action-form').submit();
         } else if (event.key === 'f' || event.key === 'F') {
-            document.getElementById('action-input').value = 'F';
+            document.getElementById('key-action-input').value = 'F';
             document.getElementById('action-form').submit();
         }
     });
