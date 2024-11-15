@@ -22,34 +22,37 @@ games = {}
 def index():
     return render_template('index.html')
 
-@app.route('/game')
+@app.route('/game', methods=['GET', 'POST'])
 def game():
     # 테이블 ID 생성 또는 가져오기
     table_id = request.args.get('table_id')
-    starting_chips = request.args.get('starting_chips', type=int)
+    starting_chips = session.get('starting_chips', 1000)
+
+    if request.method == 'POST':
+        # 닉네임을 폼 데이터에서 가져옴
+        username = request.form.get('username')
+        if username:
+            session['username'] = username
+            session['table_id'] = table_id
+            return render_template('game.html', table_id=table_id)
+        else:
+            # 닉네임이 없으면 로비로 다시 이동
+            return render_template('lobby.html', table_id=table_id)
 
     if not table_id:
         # 새로운 테이블 생성
         table_id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
-        if starting_chips is None:
-            starting_chips = 1000  # 기본 시작 칩 액수 설정
         session['starting_chips'] = starting_chips
         return render_template('lobby.html', table_id=table_id)
     else:
         # 기존 테이블에 참여
-        session['table_id'] = table_id
-        username = request.args.get('username')
+        username = session.get('username')
         if username:
-            session['username'] = username
-            return render_template('game.html', table_id=table_id)
-        elif 'username' in session:
-            # 세션에 사용자 이름이 있으면 게임으로 이동
             return render_template('game.html', table_id=table_id)
         else:
-            # 사용자 이름이 없으면 로비로 이동
+            # 닉네임 입력이 필요함
             return render_template('lobby.html', table_id=table_id)
 
-@socketio.on('join')
 @socketio.on('join')
 def on_join(data):
     username = data['username']
@@ -218,4 +221,3 @@ def on_request_chips():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5001))
     socketio.run(app, host='0.0.0.0', port=port)
-    socketio.run(app, debug=True)

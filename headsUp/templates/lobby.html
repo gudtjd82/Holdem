@@ -1,17 +1,15 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>게임 로비</title>
+    <title>텍사스 홀덤 로비</title>
 </head>
 <body>
-    <h1>게임 로비</h1>
-    <p>게임 ID: {{ game_id }}</p>
-    <p>다른 플레이어의 참여를 기다리는 중...</p>
-    <form action="/game">
-        <input type="hidden" name="game_id" value="{{ game_id }}">
+    <h1>텍사스 홀덤에 오신 것을 환영합니다!</h1>
+    <form action="/game" method="post">
+        <input type="hidden" name="table_id" value="{{ table_id }}">
         <label>닉네임을 입력하세요:</label>
         <input type="text" name="username" required>
-        <button type="submit">게임 시작</button>
+        <button type="submit">게임 참여</button>
     </form>
 </body>
 </html>
